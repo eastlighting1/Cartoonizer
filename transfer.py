@@ -112,10 +112,5 @@ output_size = (output_size[1], output_size[0])
 generated_image = F.interpolate(generated_image, size=output_size, mode='bilinear', align_corners=False)
 
 # Save the generated image
-output_path = 'output_image.jpg'
+output_path = './results/output_image.jpg'
 save_image(generated_image, output_path)
-
-print(f"Generated image saved at: {output_path}")
-print(input_image.size)
-print(Image.open(img_path).size)
-print(Image.open(output_path).size)
