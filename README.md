@@ -2,20 +2,32 @@
 
 This is an assignment for our Active Learning 2 submission in the Deep Learning class at Gachon University.
 
+<br>
+
+## Introduction
+
 ### I. TOPIC
 Human Face to cartoon character generating model
+
+<br>
 
 ### II. DATASET
 * Cartoon Faces: Images randomly collected from WEBTOON and Disney
 * Human Faces: Celebrity faces selected from the CelebA dataset and randomly collected from the internet (Total: 1,311)
 
+<br>
+
 ### III. MODEL
 * StyleGAN
 * FreezeD: freezes the first few layers of a trained discriminator and finetunes the model on a new dataset
 
+<br>
+
 ### IV. SOURCES
 * Model: https://github.com/bryandlee/malnyun_faces.git
 * Dataset: https://github.com/justinpinkney/toonify.git
+
+<br>
 
 ## Participation
 | Name | Student Number | Major | Parts | Github |
@@ -25,3 +37,48 @@ Human Face to cartoon character generating model
 | 김동현 | 201935217 | Department of Computing | Evaluation | [Link](https://github.com/eastlighting1) |
 | 곽은지 | 202037607 | Department of Biomedical Engineering | PPT | - |
 | 김홍주 | 202037620 | Department of Biomedical Engineering | Analysis | - |
+
+<br>
+<br>
+
+## How to Use
+
+### File Structure
+
+| Repository | Folder | Subfolder | Description |
+| :---: | :---: | :---: | :---: |
+|Cartoonzier | | | |
+| ├ | data | | Images to use for training |
+| ├ | ─ | celebA | celebA Images |
+| ├ | ─ | malnyun | Images in the style of Mal-nyeon |
+| ├ | test_image | | The image you use to see how the transfer file is applied |
+| ├ | train.py	| | Training file |
+| ├ | transfer.py	| | Transferring File |
+| ├ | README.md	| | Description of the repository |
+| └ | AL2.ipynb	| | File verified by Colab to work |
+
+
+
+### CMD
+
+<b> First you have to do </b>
+
+```console
+cd ./Cartoonizer
+```
+
+<br>
+
+<b> Training </b>
+
+```console
+python train.py --img_path "./data/celeba" --style_path "./data/malnyun" --num_epoch <your_input>
+```
+
+<br>
+
+<b> Transferring </b>
+
+```console
+python transfer.py --pt_path <the pt file you will use> --image_path <the image file you will use>
+```
