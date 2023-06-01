@@ -38,6 +38,8 @@ Human Face to cartoon character generating model
 | 곽은지 | 202037607 | Department of Biomedical Engineering | PPT | - |
 | 김홍주 | 202037620 | Department of Biomedical Engineering | Analysis | - |
 
+* 팀원분들은 이거 보시면 본인 이름 영문명이랑 깃허브 링크 보내주세용
+
 <br>
 <br>
 
