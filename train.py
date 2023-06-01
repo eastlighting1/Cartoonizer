@@ -1,104 +1,141 @@
+#train
+
 import torch
 import torchvision.transforms as transforms
+import torchvision.datasets as datasets
 from PIL import Image
 import torch.nn as nn
 import torchvision.models as models
-from torchvision.datasets import CelebA
+import torchvision.datasets as dset
 import torch.optim as optim
 from torchvision.utils import save_image
-import matplotlib.pyplot as plt
 import torchvision.utils as vutils
 import numpy as np
-
-parser = argparse.ArgumentParser(description='Cartoonizer)
-
-parser.add_argument('--pt_path',
-                    type=str,
-                    default=True,
-                    help='location of pt file')
-
-args = parser.parse_args()
-
-workers = 2
-batch_size = 128
-image_size = 64
-ngpu = 1
-
-#Assigning the GPU to the variable device
-device=torch.device( "cuda" if (torch.cuda.is_available()) else 'cpu')
-
-transform = transforms.Compose([
-    transforms.Resize((64, 64)),  # Resize the image to a fixed size
-    transforms.ToTensor(),  # Convert the image to a tensor
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # Normalize the image tensors
-])
-
-# Load the CelebA dataset
-dataset = CelebA(root='./data', split='train', download=True, transform=transform)
-
-# Create the dataloader
-dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
-                                         shuffle=True, num_workers=workers)
+import argparse
+import datetime
+import os
 
 #Loading the model vgg19 that will serve as the base model
 model=models.vgg19(pretrained=True).features
+#Assigning the GPU to the variable device
+device=torch.device( "cuda" if (torch.cuda.is_available()) else 'cpu')
 
-#defing a function that will load the image and perform the required preprocessing and put it on the GPU
-def image_loader(path):
-    image=Image.open(path)
-    #defining the image transformation steps to be performed before feeding them to the model
-    loader=transforms.Compose([transforms.Resize((512,512)), transforms.ToTensor()])
-    #The preprocessing steps involves resizing the image and then converting it to a tensor
-    image=loader(image).unsqueeze(0)
-    return image.to(device,torch.float)
+parser = argparse.ArgumentParser(description='Style Transfer')
 
-#Loading the original and the style image
-original_image=image_loader('./Nikola-Tesla.jpg')
-style_image=image_loader('./malnyun/image/1.jpg')
+parser.add_argument('--img_path',
+                    type=str,
+                    default=True,
+                    help='path of folder for the images to be trained')
 
-#Creating the generated image from the original image
-# generated_image=original_image.clone().requires_grad_(True)
-generated_image=original_image
+parser.add_argument('--style_path',
+                    type=str,
+                    default=True,
+                    help='path of folder for the images to be feature')
 
-#Defining a class that for the model
+parser.add_argument('--num_epoch',
+                    type=int,
+                    default=True,
+                    help='the number of epoch')
+
+args = parser.parse_args()
+
+# Set the random seed for reproducibility
+torch.manual_seed(42)
+
+# Set the paths for the datasets
+img_dataroot = args.img_path
+style_dataroot = args.style_path
+
+# Set the parameters for training
+num_epochs = args.num_epoch
+batch_size = 64
+image_size = 64
+nc = 3
+nz = 100
+ngf = 64
+ndf = 64
+lr = 0.0002
+beta1 = 0.5
+ngpu = 1
+
+# Define the transforms for the datasets
+transform = transforms.Compose([
+    transforms.Resize(image_size),
+    transforms.CenterCrop(image_size),
+    transforms.ToTensor(),
+    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+])
+
+# Load the datasets
+img_dataset = datasets.ImageFolder(root=img_dataroot, transform=transform)
+style_dataset = datasets.ImageFolder(root=style_dataroot, transform=transform)
+
+# Create the dataloaders
+img_dataloader = torch.utils.data.DataLoader(
+    img_dataset, batch_size=batch_size, shuffle=True, num_workers=2
+)
+style_dataloader = torch.utils.data.DataLoader(
+    style_dataset, batch_size=batch_size, shuffle=True, num_workers=2
+)
+
+# Define the VGG model
 class VGG(nn.Module):
     def __init__(self):
-        super(VGG,self).__init__()
-        self.req_features= ['0','5','10','19','28'] 
-        #Since we need only the 5 layers in the model so we will be dropping all the rest layers from the features of the model
-        self.model=models.vgg19(pretrained=True).features[:29] #model will contain the first 29 layers
-    
-   
-    #x holds the input tensor(image) that will be feeded to each layer
-    def forward(self,x):
-        #initialize an array that wil hold the activations from the chosen layers
-        features=[]
-        #Iterate over all the layers of the mode
-        for layer_num,layer in enumerate(self.model):
-            #activation of the layer will stored in x
-            x=layer(x)
-            #appending the activation of the selected layers and return the feature array
-            if (str(layer_num) in self.req_features):
+        super(VGG, self).__init__()
+        self.req_features = ['0', '5', '10', '19', '28']
+        vgg19 = models.vgg19(pretrained=True).features
+
+        # Extract the required layers from the VGG model
+        self.model = nn.Sequential()
+        for layer_num, layer in enumerate(vgg19):
+            self.model.add_module(str(layer_num), layer)
+            if str(layer_num) in self.req_features:
+                break
+
+    def forward(self, x):
+        features = []
+        for layer_num, layer in enumerate(self.model):
+            x = layer(x)
+            if str(layer_num) in self.req_features:
                 features.append(x)
-                
         return features
-     
+
 def calc_content_loss(gen_feat,orig_feat):
     #calculating the content loss of each layer by calculating the MSE between the content and generated features and adding it to content loss
-    content_l=torch.mean((gen_feat-orig_feat)**2)
-    return content_l
-  
-def calc_style_loss(gen,style):
-    #Calculating the gram matrix for the style and the generated image
-    batch_size,channel,height,width=gen.shape
+    
+    return torch.mean((gen_feat-orig_feat)**2)
 
-    G=torch.mm(gen.view(channel,height*width),gen.view(channel,height*width).t())
-    A=torch.mm(style.view(channel,height*width),style.view(channel,height*width).t())
+
+def calc_style_loss(gen, style):
+    
+    # 128, 64, 64, 64
+    
+    batch_size, channel, height, width = gen.shape
+    
+    # 128, 64, w*h
+    
+    gen_flat = gen.view(batch_size, channel, -1)
+    style_flat = style.view(batch_size, channel, -1)
+     
+    G = torch.bmm(gen_flat, gen_flat.transpose(1, 2))
+    A = torch.bmm(style_flat, style_flat.transpose(1, 2))
+    
+    #print('G', G.shape)
+    #print('A', A.shape)
+    
+    return torch.mean((G - A) ** 2)
+
+
+
+# def calc_style_loss(gen,style):
+    #Calculating the gram matrix for the style and the generated image
+    # batch_size,channel,height,width=gen.shape
+    # G = torch.mm(gen.view(batch_size, channel, height * width), gen.view(batch_size, channel, height * width).transpose(1, 2))
+    # A = torch.mm(style.view(batch_size, channel, height * width), style.view(batch_size, channel, height * width).transpose(1, 2))
+    # G = torch.mm(gen.view(channel,height*width),gen.view(channel,height*width).t())
+    # A = torch.mm(style.view(channel,height*width),style.view(channel,height*width).t())
         
-    #Calcultating the style loss of each layer by calculating the MSE between the gram matrix of the style image and the generated image and adding it to style loss
-    style_l=torch.mean((G-A)**2)
-    return style_l
-  
+
 def calculate_loss(gen_features, orig_feautes, style_featues):
     style_loss=content_loss=0
     for gen,cont,style in zip(gen_features,orig_feautes,style_featues):
@@ -110,43 +147,92 @@ def calculate_loss(gen_features, orig_feautes, style_featues):
     total_loss=alpha*content_loss + beta*style_loss 
     return total_loss
 
- 
-#Load the model to the GPU
-model=VGG().to(device).eval() 
 
-#initialize the paramerters required for fitting the model
-# epoch=7000
-epoch = 100
-lr=0.004
-alpha=8
-beta=70
+# Initialize the VGG model
+model = VGG().to(device).eval()
 
-#using adam optimizer and it will update the generated image not the model parameter 
-optimizer=optim.Adam([generated_image],lr=lr)
+# Generate random input noise
+input_noise = torch.randn(batch_size, nz, 1, 1, device=device)
 
+# Initialize the generator model
+generator = nn.Sequential(
+    nn.ConvTranspose2d(nz, ngf * 8, 4, 1, 0, bias=False),
+    nn.BatchNorm2d(ngf * 8),
+    nn.ReLU(True),
+    nn.ConvTranspose2d(ngf * 8, ngf * 4, 4, 2, 1, bias=False),
+    nn.BatchNorm2d(ngf * 4),
+    nn.ReLU(True),
+    nn.ConvTranspose2d(ngf * 4, ngf * 2, 4, 2, 1, bias=False),
+    nn.BatchNorm2d(ngf * 2),
+    nn.ReLU(True),
+    nn.ConvTranspose2d(ngf * 2, ngf, 4, 2, 1, bias=False),
+    nn.BatchNorm2d(ngf),
+    nn.ReLU(True),
+    nn.ConvTranspose2d(ngf, nc, 4, 2, 1, bias=False),
+    nn.Tanh()
+).to(device)
 
-#iterating for 1000 times
-for e in range (epoch):
-    #extracting the features of generated, content and the original required for calculating the loss
-    gen_features=model(generated_image)
-    orig_feautes=model(original_image)
-    style_featues=model(style_image)
-    
-    #iterating over the activation of each layer and calculate the loss and add it to the content and the style loss
-    total_loss=calculate_loss(gen_features, orig_feautes, style_featues)
-    #optimize the pixel values of the generated image and backpropagate the loss
-    optimizer.zero_grad()
-    total_loss.backward()
-    optimizer.step()
-    #print the image and save it after each 100 epoch
-    if(e/100):
-        print(total_loss)
+# Initialize the optimizer
+optimizer = optim.Adam(generator.parameters(), lr=lr, betas=(beta1, 0.999))
+
+# Training loop
+for epoch in range(num_epochs):
+    for i, (images, _) in enumerate(img_dataloader):
+        real_images = images.to(device)
+        batch_size = real_images.size(0)
+
         
-        save_image(generated_image,"gen.png")
+        # Generate fake images
+        fake_images = generator(input_noise[:batch_size])
         
-image = Image.open("gen.png")
+        #print(fake_images.shape)
 
-# Display the image
-plt.imshow(image)
-plt.axis('off')  # Optional: turn off axes
-plt.show()
+        # Extract features from the real and style images
+        orig_features = model(real_images)
+        style_features = model(next(iter(style_dataloader))[0][:batch_size].to(device))
+        
+        #print(orig_features[0].shape)
+        #print(style_features[0].shape)
+        
+
+        # Calculate the loss
+        alpha=8
+        beta=70
+        
+        vgg_output = model(fake_images)
+        
+        #print(vgg_output[0].shape)
+        
+        total_loss = calculate_loss(vgg_output, orig_features, style_features)
+        
+        
+
+        # Update the generator
+        optimizer.zero_grad()
+        total_loss.backward()
+        optimizer.step()
+
+        # Print the loss
+        if (i + 1) % 10 == 0:
+            print(
+                f"Epoch [{epoch+1}/{num_epochs}], "
+                f"Step [{i+1}/{len(img_dataloader)}], "
+                f"Loss: {total_loss.item():.4f}"
+            )
+
+#Store pt
+folder_path = os.path.join(os.path.dirname(__file__), '.', 'pt')
+
+current_date = datetime.date.today()
+pt_name = "model_" + current_date.strftime("%Y%m%d") + ".pt"
+
+if not os.path.exists(folder_path):
+    os.makedirs(folder_path)
+
+pt_path = os.path.join(folder_path, pt_name)
+
+torch.save({
+            'model_state_dict': model.state_dict(),
+            'generator_state_dict': generator.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            }, pt_path)
