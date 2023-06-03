@@ -32,11 +32,11 @@ Human Face to cartoon character generating model
 ## Participation
 | Name | Student Number | Major | Parts | Github |
 | :---: | :---: | :---: | :---: | :---: |
-| 권우혁 | 201835408 | Department of Computing | Presentation | [Link](https://github.com/Hongsi-Taste) |
-| 김서영 | 201934212 | Department of Industrial Engineering | Transfer Learning | - |
-| 김동현 | 201935217 | Department of Computing | Evaluation | [Link](https://github.com/eastlighting1) |
-| 곽은지 | 202037607 | Department of Biomedical Engineering | PPT | - |
-| 김홍주 | 202037620 | Department of Biomedical Engineering | Analysis | - |
+| Kwon Woohyuk | 201835408 | Department of Computing | Presentation | [Link](https://github.com/Hongsi-Taste) |
+| Kim Seoyoung | 201934212 | Department of Industrial Engineering | Transfer Learning | - |
+| Kim Donghyeon | 201935217 | Department of Computing | Evaluation | [Link](https://github.com/eastlighting1) |
+| Kwak Eunji | 202037607 | Department of Biomedical Engineering | PPT | - |
+| Kim Hongjoo | 202037620 | Department of Biomedical Engineering | Analysis | - |
 
 * 팀원분들은 이거 보시면 본인 이름 영문명이랑 깃허브 링크 보내주세용
 
