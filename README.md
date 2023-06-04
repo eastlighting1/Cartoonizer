@@ -33,7 +33,7 @@ Human Face to cartoon character generating model
 | Name | Student Number | Major | Parts | Github |
 | :---: | :---: | :---: | :---: | :---: |
 | Kwon Woohyuk | 201835408 | Department of Computing | Presentation | [Link](https://github.com/Hongsi-Taste) |
-| Kim Seoyoung | 201934212 | Department of Industrial Engineering | Transfer Learning | - |
+| Kim Seoyoung | 201934212 | Department of Industrial Engineering | Transfer Learning | [Link](https://github.com/ksysy) |
 | Kim Donghyeon | 201935217 | Department of Computing | Evaluation | [Link](https://github.com/eastlighting1) |
 | Kwak Eunji | 202037607 | Department of Biomedical Engineering | PPT | - |
 | Kim Hongjoo | 202037620 | Department of Biomedical Engineering | Analysis | - |
