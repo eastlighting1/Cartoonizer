@@ -56,6 +56,7 @@ Human Face to cartoon character generating model
 | ├ | test_image | | The image you use to see how the transfer file is applied |
 | ├ | train.py	| | Training file |
 | ├ | transfer.py	| | Transferring File |
+| ├ | evaluation.py	| | Evaluation File |
 | ├ | README.md	| | Description of the repository |
 | └ | AL2.ipynb	| | File verified by Colab to work |
 
