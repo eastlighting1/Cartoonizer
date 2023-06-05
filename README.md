@@ -84,3 +84,11 @@ python train.py --img_path "./data/celeba" --style_path "./data/malnyun" --num_e
 ```console
 python transfer.py --pt_path <the pt file you will use> --image_path <the image file you will use>
 ```
+
+<br>
+
+<b> Evaluation </b>
+
+```console
+python evaluation.py --stylized_path <the image file you will use> --style_path <the folder you will use>
+```
